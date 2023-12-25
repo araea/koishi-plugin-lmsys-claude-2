@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-lmsys-claude-2",
-  "description": "",
-  "version": "0.0.1",
+  "description": "随开随用，与 [lmsys](https://chat.lmsys.org/) 上的 claude-2.0 对话，可选 lmsys 上的其他模型，共 29 个。",
+  "version": "0.0.8",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -9,13 +9,25 @@
     "dist"
   ],
   "license": "MIT",
-  "scripts": {},
+  "author": "Nawyjx <3373167460@qq.com>",
+  "homepage": "https://www.npmjs.com/package/koishi-plugin-lmsys-claude-2?activeTab=readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/araea/koishi-plugin-lmsys-claude-2.git"
+  },
   "keywords": [
     "chatbot",
     "koishi",
-    "plugin"
+    "plugin",
+    "claude",
+    "lmsys",
+    "fastchat"
   ],
   "peerDependencies": {
     "koishi": "^4.16.2"
+  },
+  "dependencies": {
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
 }
