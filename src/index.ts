@@ -152,11 +152,21 @@ export async function apply(ctx: Context, config: Config) {
   }
 
   ctx.command('lmsysClaude.switchingModel <model:text>', '切换模型').action(async ({ session }, model) => {
-    if (!model) {
-      return '大笨蛋~';
-    }
     if (isReplying) {
       return '等一下啦~';
+    }
+    if (!model) {
+      await session.execute(`novelai.modelList`)
+      await session.send('请输入你想要切换的模型全名或相应的数字ID：')
+      model = await session.prompt()
+      if (!model) return '输入超时。'
+    }
+    // 检测输入是否为数字ID
+    const modelId = parseInt(model);
+    if (!isNaN(modelId) && modelId >= 1 && modelId <= models.length) {
+      // 获取对应的尺寸
+      const modelName = models[modelId - 1];
+      model = modelName;
     }
     await session.send('嗯~');
     isReplying = true;
