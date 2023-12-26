@@ -156,7 +156,7 @@ export async function apply(ctx: Context, config: Config) {
       return '等一下啦~';
     }
     if (!model) {
-      await session.execute(`novelai.modelList`)
+      await session.execute(`lmsysClaude.modelList`)
       await session.send('请输入你想要切换的模型全名或相应的数字ID：')
       model = await session.prompt()
       if (!model) return '输入超时。'

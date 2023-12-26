@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-lmsys-claude-2",
   "description": "随开随用，与 [lmsys](https://chat.lmsys.org/) 上的 claude-2.0 对话，可选 lmsys 上的其他模型，共 29 个。",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
