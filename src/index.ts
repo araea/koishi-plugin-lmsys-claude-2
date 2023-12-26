@@ -71,7 +71,7 @@ const models = [
 export async function apply(ctx: Context, config: Config) {
   const { Model, Temperature } = config
   logger.info('正在初始化中.......')
-  const { browser, page } = await openWebPage(ctx, Model, Temperature)
+  const { browser, page } = await openWebPage(Model, Temperature)
   logger.info('初始化成功！')
 
   function waitForTargetElement(selector: string, countThreshold: number) {
@@ -176,7 +176,7 @@ export async function apply(ctx: Context, config: Config) {
   });
 }
 
-async function openWebPage(ctx: Context, model, temperature) {
+async function openWebPage(model, temperature) {
   const browser = await puppeteer.launch({
     executablePath,
     headless: 'new'
