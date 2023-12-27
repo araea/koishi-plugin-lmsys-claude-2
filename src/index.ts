@@ -143,6 +143,7 @@ export async function apply(ctx: Context, config: Config) {
   ctx.command('lmsysClaude.reload', '重载页面').action(async ({ session }) => {
     await session.send('嗯~');
     isReplying = true;
+    await page.close();
     await processPage(page, Model, Temperature)
     isReplying = false;
     await session.send('好啦~');
@@ -241,7 +242,6 @@ async function switchingModel(page, model: string) {
 
 async function processPage(page: any, model: any, temperature: number) {
   await page.goto('https://chat.lmsys.org/');
-
   await page.on('dialog', async (dialog: any) => {
     await dialog.dismiss();
   });
