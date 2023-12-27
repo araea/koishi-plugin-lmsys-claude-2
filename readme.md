@@ -24,8 +24,8 @@ Claude-2.0 是一个基于深度学习的自然语言生成系统，可以根据
 
 - `lmsysClaude`：显示 lmsysClaude 指令帮助
 - `lmsysClaude.clearHistory`：清除对话历史
+- `lmsysClaude.stop`：停（将正在工作状态取消）
 - `lmsysClaude.regenerate`：重新回答
-- `lmsysClaude.reload`：重载页面
 - `lmsysClaude.modelList`：模型列表
 - `lmsysClaude.chat <prompt:text>`：对话
 - `lmsysClaude.switchingModel <model:text>`：切换模型

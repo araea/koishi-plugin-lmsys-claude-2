@@ -17,8 +17,8 @@ export const usage = `## 🎮 使用
 
 - \`lmsysClaude\`：显示 lmsysClaude 指令帮助
 - \`lmsysClaude.clearHistory\`：清除对话历史
+- \`lmsysClaude.stop\`：停（将正在工作状态取消）
 - \`lmsysClaude.regenerate\`：重新回答
-- \`lmsysClaude.reload\`：重载页面
 - \`lmsysClaude.modelList\`：模型列表
 - \`lmsysClaude.chat <prompt:text>\`：对话
 - \`lmsysClaude.switchingModel <model:text>\`：切换模型`
@@ -100,7 +100,7 @@ export async function apply(ctx: Context, config: Config) {
     const textareaElements = await page.$$('textarea[data-testid="textbox"]');
     const targetTextareaElement = textareaElements[2];
     await targetTextareaElement.click();
-    await targetTextareaElement.type(output);
+    await targetTextareaElement.type(output, { delay: 0 });
     await targetTextareaElement.press('Enter');
     isReplying = true;
     await page.waitForTimeout(1000);
@@ -123,30 +123,26 @@ export async function apply(ctx: Context, config: Config) {
     if (isReplying) {
       return '等一下啦~';
     }
-    await handleCommandClickButton(session, 'lmsysClaude.clearHistory', '#component-96');
+    await handleCommandClickButton(session, 'lmsysClaude.clearHistory', '#component-93');
     await session.send('好啦~');
+  });
+
+  ctx.command('lmsysClaude.stop', '停').action(async ({ session }) => {
+    isReplying = false
+    await session.send('停啦~');
   });
 
   ctx.command('lmsysClaude.regenerate', '重新回答').action(async ({ session }) => {
     if (isReplying) {
       return '等一下啦~';
     }
-    await handleCommandClickButton(session, 'lmsysClaude.regenerate', '#component-95');
+    await handleCommandClickButton(session, 'lmsysClaude.regenerate', '#component-92');
     const text = await getBotReplyText();
     await session.send(text);
   });
 
   ctx.command('lmsysClaude.modelList', '模型列表').action(async ({ session }) => {
     await session.send(`${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}`);
-  });
-
-  ctx.command('lmsysClaude.reload', '重载页面').action(async ({ session }) => {
-    await session.send('嗯~');
-    isReplying = true;
-    await page.close();
-    await processPage(page, Model, Temperature)
-    isReplying = false;
-    await session.send('好啦~');
   });
 
   ctx.command('lmsysClaude.chat <prompt:text>', '对话').action(async ({ session }, prompt) => {
@@ -233,7 +229,7 @@ async function switchingModel(page, model: string) {
   await targetInputElement.click({ clickCount: 3 });
   await page.keyboard.press('Backspace');
 
-  await targetInputElement.type(`${model}`);
+  await targetInputElement.type(`${model}`, { delay: 0 });
 
   await targetInputElement.press('Enter');
 
