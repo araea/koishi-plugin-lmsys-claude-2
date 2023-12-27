@@ -18,16 +18,19 @@ export const usage = `## 🎮 使用
 - \`lmsysClaude\`：显示 lmsysClaude 指令帮助
 - \`lmsysClaude.clearHistory\`：清除对话历史
 - \`lmsysClaude.regenerate\`：重新回答
+- \`lmsysClaude.reload\`：重载页面
 - \`lmsysClaude.modelList\`：模型列表
 - \`lmsysClaude.chat <prompt:text>\`：对话
 - \`lmsysClaude.switchingModel <model:text>\`：切换模型`
 
 export interface Config {
+  headless
   Model
   Temperature
 }
 
 export const Config: Schema<Config> = Schema.object({
+  headless: Schema.union(['true', 'false', 'new']).default('new').description('是否以无头模式运行浏览器。'),
   Model: Schema.union(['mixtral-8x7b-instruct-v0.1', 'mistral-7b-instruct', 'gemini-pro', 'solar-10.7b-instruct-v1.0', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-1106', 'gpt-4-turbo', 'dolphin-2.2.1-mistral-7b', 'claude-2.1', 'claude-2.0', 'claude-instant-1', 'pplx-70b-online', 'pplx-7b-online', 'openhermes-2.5-mistral-7b', 'starling-lm-7b-alpha', 'tulu-2-dpo-70b', 'yi-34b-chat', 'vicuna-33b', 'vicuna-13b', 'llama-2-70b-chat', 'llama-2-13b-chat', 'llama-2-7b-chat', 'chatglm3-6b', 'openchat-3.5', 'zephyr-7b-beta', 'qwen-14b-chat', 'codellama-34b-instruct', 'wizardlm-70b', 'falcon-180b-chat']).default('claude-2.0').description('选择一种聊天模型。注意，修改配置后请重载插件，否则不生效。'),
   Temperature: Schema.number().role('slider').min(0).max(1).step(0.1).default(1).description('模型的温度。注意，修改配置后请重载插件，否则不生效。'),
 })
@@ -69,9 +72,9 @@ const models = [
 ];
 
 export async function apply(ctx: Context, config: Config) {
-  const { Model, Temperature } = config
+  const { Model, Temperature, headless } = config
   logger.info('正在初始化中.......')
-  const { browser, page } = await openWebPage(Model, Temperature)
+  const { browser, page } = await openWebPage(Model, Temperature, headless)
   logger.info('初始化成功！')
 
   function waitForTargetElement(selector: string, countThreshold: number) {
@@ -137,6 +140,14 @@ export async function apply(ctx: Context, config: Config) {
     await session.send(`${models.map((model, index) => `${index + 1}. ${model}`).join('\n')}`);
   });
 
+  ctx.command('lmsysClaude.reload', '重载页面').action(async ({ session }) => {
+    await session.send('嗯~');
+    isReplying = true;
+    await processPage(page, Model, Temperature)
+    isReplying = false;
+    await session.send('好啦~');
+  });
+
   ctx.command('lmsysClaude.chat <prompt:text>', '对话').action(async ({ session }, prompt) => {
     if (!prompt) {
       return '大笨蛋~';
@@ -186,55 +197,22 @@ export async function apply(ctx: Context, config: Config) {
   });
 }
 
-async function openWebPage(model, temperature) {
+async function openWebPage(model, temperature, headless) {
   const browser = await puppeteer.launch({
     executablePath,
-    headless: 'new'
+    timeout: 0,
+    protocolTimeout: 300000,
+    headless: headless === 'true' ? true : headless === 'false' ? false : 'new',
     // headless: false
   });
   const page = await browser.newPage();
+  // 设置默认的导航超时时间为0（永不超时）
+  await page.setDefaultNavigationTimeout(0);
+
+  // 设置默认的等待超时时间为0（永不超时）
+  await page.setDefaultTimeout(0);
   await page.setViewport({ width: 800, height: 600 });
-  await page.goto('https://chat.lmsys.org/');
-  await page.on('dialog', async dialog => {
-    // logger.info(dialog.message()); //打印出弹框的信息
-    // logger.info(dialog.type()); //打印出弹框的类型，是alert、confirm、prompt哪种
-    // logger.info(dialog.defaultValue()); //打印出默认的值只有 prompt 弹框才有
-    await dialog.dismiss();
-    // await dialog.accept('demo'); // accept函数也是可以的呢，可以向 prompt 弹框输入文字
-  });
-
-  await page.waitForSelector('.tab-nav button');
-
-  await page.waitForTimeout(5000);
-
-  const buttonSelector = '.tab-nav button';
-  const directChatButtonSelector = `${buttonSelector}:nth-child(3)`;
-  await page.click(directChatButtonSelector);
-
-  await switchingModel(page, model)
-
-  await page.waitForSelector('.icon.svelte-s1r2yt');
-
-  const elements = await page.$$('.icon.svelte-s1r2yt');
-  await elements[5].click();
-
-  await page.waitForTimeout(1000);
-
-  await page.waitForSelector('input[data-testid="number-input"]');
-
-  const inputElements2 = await page.$$('input[data-testid="number-input"]');
-  const seventhInputElement = inputElements2[6];
-
-  await seventhInputElement.click();
-
-  await page.keyboard.down('Control');
-  await page.keyboard.press('a');
-  await page.keyboard.up('Control');
-  await page.keyboard.press('Backspace');
-
-  await page.keyboard.type(`${temperature}`);
-
-  await page.keyboard.press('Enter');
+  await processPage(page, model, temperature)
 
   return { browser, page }
 }
@@ -259,4 +237,45 @@ async function switchingModel(page, model: string) {
   await targetInputElement.press('Enter');
 
   await page.waitForTimeout(2000);
+}
+
+async function processPage(page: any, model: any, temperature: number) {
+  await page.goto('https://chat.lmsys.org/');
+
+  await page.on('dialog', async (dialog: any) => {
+    await dialog.dismiss();
+  });
+
+  await page.waitForSelector('.tab-nav button');
+
+  await page.waitForTimeout(5000);
+
+  const buttonSelector = '.tab-nav button';
+  const directChatButtonSelector = `${buttonSelector}:nth-child(3)`;
+  await page.click(directChatButtonSelector);
+
+  await switchingModel(page, model);
+
+  await page.waitForSelector('.icon.svelte-s1r2yt');
+
+  const elements = await page.$$('.icon.svelte-s1r2yt');
+  await elements[5].click();
+
+  await page.waitForTimeout(1000);
+
+  await page.waitForSelector('input[data-testid="number-input"]');
+
+  const inputElements2 = await page.$$('input[data-testid="number-input"]');
+  const seventhInputElement = inputElements2[6];
+
+  await seventhInputElement.click();
+
+  await page.keyboard.down('Control');
+  await page.keyboard.press('a');
+  await page.keyboard.up('Control');
+  await page.keyboard.press('Backspace');
+
+  await page.keyboard.type(`${temperature}`);
+
+  await page.keyboard.press('Enter');
 }
