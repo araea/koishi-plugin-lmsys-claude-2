@@ -209,6 +209,9 @@ async function openWebPage(model, temperature, headless) {
   // 设置默认的等待超时时间为0（永不超时）
   await page.setDefaultTimeout(0);
   await page.setViewport({ width: 800, height: 600 });
+  await page.on('dialog', async (dialog: any) => {
+    await dialog.dismiss();
+  });
   await processPage(page, model, temperature)
 
   return { browser, page }
@@ -238,9 +241,6 @@ async function switchingModel(page, model: string) {
 
 async function processPage(page: any, model: any, temperature: number) {
   await page.goto('https://chat.lmsys.org/');
-  await page.on('dialog', async (dialog: any) => {
-    await dialog.dismiss();
-  });
 
   await page.waitForSelector('.tab-nav button');
 
